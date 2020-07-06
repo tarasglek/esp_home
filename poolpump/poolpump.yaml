@@ -46,10 +46,10 @@ sensor:
       name: "humidity"
     update_interval: 1s
 # logging
-debug:
+# debug:
 
-logger:
-  level: DEBUG
+# logger:
+  # level: DEBUG
 
 web_server:
   port: 80

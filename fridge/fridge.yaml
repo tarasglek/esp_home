@@ -2,6 +2,13 @@ esphome:
   name: fridge
   platform: ESP8266
   board: esp8285
+  on_boot:
+    then:
+    #esp home can save values of thermostat mode across reboots, but i cant figure how to set em in yaml, so do it here
+    # - lambda: !lambda |-
+    #     auto call = id(fridge).make_call();
+    #     call.set_mode("AUTO");
+    #     call.perform();
 
 wifi:
   ssid: !secret wifi_ssid
@@ -44,7 +51,7 @@ sensor:
       name: "temperature"
     humidity:
       name: "humidity"
-    update_interval: 1s
+    update_interval: 60s
 # logging
 debug:
 
@@ -64,9 +71,20 @@ climate:
     default_target_temperature_low: 3.2 °C
     default_target_temperature_high: 3.4 °C
     cool_action:
+      # turn on cooler for a minimum of 60s, by disabling climate component for 60s
       - switch.turn_on: cooler
+      # - lambda: !lambda |-
+      #     auto call = id(fridge).make_call();
+      #     call.set_mode("OFF");
+      #     call.perform();
+      # - logger.log: "Turned on..disabling thermostat for 60s"
+      # - delay: 60s
+      # - lambda: !lambda |-
+      #     auto call = id(fridge).make_call();
+      #     call.set_mode("AUTO");
+      #     call.perform();
+      - logger.log: "Restored thermostat"
     idle_action:
       - switch.turn_off: cooler
     heat_action:
       - switch.turn_off: cooler
-

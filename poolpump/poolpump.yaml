@@ -2,11 +2,8 @@ esphome:
   name: poolpump
   platform: ESP8266
   board: esp8285
-  on_boot:
-    priority: -10
-    # ...
-    then:
-      - switch.turn_on: pump
+  # on_boot:
+  #   - switch.turn_on: pump
 
 wifi:
   ssid: !secret wifi_ssid
@@ -49,7 +46,8 @@ sensor:
       name: "temperature"
     humidity:
       name: "humidity"
-    update_interval: 1s
+      id: humidity
+    update_interval: 10s
 # logging
 # debug:
 
@@ -65,14 +63,40 @@ time:
   - platform: sntp
     id: sntp_time
     timezone: America/Los_Angeles
-    # servers:
-      # - 192.168.1.1
-    # start around 7, stop around 4
     on_time:
-      - hours: 6-15,21-22
+    #run pool extra hours if raining or hot
+      - hours: 6-8
+        then:
+          if:
+            condition:
+              or:
+                - sensor.in_range:
+                    id: temperature
+                    above: 20.0
+                - sensor.in_range:
+                    id: humidity
+                    above: 99.9
+            then:
+              - switch.turn_on: pump
+            else:
+              - switch.turn_off: pump
+      - hours: 9-15
         then:
           - switch.turn_on: pump
-      - hours: 16,23
+      - hours: 21-22
+        then:
+          if:
+            condition:
+              or:
+                - sensor.in_range:
+                    id: temperature
+                    above: 20.0
+                - sensor.in_range:
+                    id: humidity
+                    above: 99.9
+            then:
+            - switch.turn_on: pump
+      - hours: 16,23,0-5
         then:
           - switch.turn_off: pump
       

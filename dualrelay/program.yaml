@@ -1,0 +1,66 @@
+# Config from https://community.home-assistant.io/t/4-channel-relay-esp8266-wifi-board-working-with-esphome/120594/48
+# curl -X POST http://dualrelay/switch/relay1/turn_off
+esphome:
+  name: dualrelay
+  platform: ESP8266
+  board: esp8285
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "dualrelay Fallback Hotspot"
+
+captive_portal:
+
+# Enable Home Assistant API
+api:
+
+logger:
+  # disable logging to serial port
+  baud_rate: 0
+  level: DEBUG
+
+ota:
+
+uart:
+  baud_rate: 115200 # speed to STC15L101EW
+  tx_pin: GPIO1
+  rx_pin: GPIO3
+
+switch:
+  - platform: template
+    name: 'dualrelay'
+    id: dualrelay
+    turn_on_action:
+      - switch.turn_on: relay1
+      - switch.turn_on: relay2
+    turn_off_action:
+      - switch.turn_off: relay1
+      - switch.turn_off: relay2
+    optimistic: true
+
+  - platform: template
+    name: 'relay1'
+    id: relay1
+    turn_on_action:
+      - uart.write: [0xA0, 0x01, 0x01, 0xA2]
+    turn_off_action:
+      - uart.write: [0xA0, 0x01, 0x00, 0xA1]
+    optimistic: true
+  - platform: template
+    name: 'relay2'
+    id: relay2
+    turn_on_action:
+      - uart.write: [0xA0, 0x02, 0x01, 0xA3]
+    turn_off_action:
+      - uart.write: [0xA0, 0x02, 0x00, 0xA2]
+    optimistic: true
+# logging
+debug:
+web_server:
+  port: 80
+  prometheus: true
+

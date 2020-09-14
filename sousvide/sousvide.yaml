@@ -58,7 +58,7 @@ sensor:
         condition:
           sensor.in_range:
             id: temperature
-            above: 50
+            above: 57
         then:
           - switch.turn_off: heater
         else:

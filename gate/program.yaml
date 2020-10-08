@@ -1,7 +1,7 @@
 # Config from https://community.home-assistant.io/t/4-channel-relay-esp8266-wifi-board-working-with-esphome/120594/48
 # curl -X POST http://dualrelay/switch/relay1/turn_off
 esphome:
-  name: dualrelay
+  name: gate
   platform: ESP8266
   board: esp8285
 
@@ -34,14 +34,8 @@ switch:
   - platform: template
     name: 'dualrelay'
     id: dualrelay
-    turn_on_action:
-      - switch.turn_on: relay1
-      - switch.turn_on: relay2
-    turn_off_action:
-      - switch.turn_off: relay1
-      - switch.turn_off: relay2
     optimistic: true
-
+    restore_state: true
   - platform: template
     name: 'relay1'
     id: relay1
@@ -62,5 +56,21 @@ switch:
 debug:
 web_server:
   port: 80
-  prometheus: true
+prometheus:
+
+interval:
+- interval: 1s
+  then:
+    if:
+      condition:
+        # Same syntax for is_off
+        switch.is_on: dualrelay
+      then:
+        - switch.turn_on: relay1
+        - delay: 50ms
+        - switch.turn_on: relay2
+      else:
+        - switch.turn_off: relay1
+        - delay: 50ms
+        - switch.turn_off: relay2
 

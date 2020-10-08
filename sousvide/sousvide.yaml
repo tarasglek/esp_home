@@ -58,7 +58,7 @@ sensor:
         condition:
           sensor.in_range:
             id: temperature
-            above: 57
+            above: 90 
         then:
           - switch.turn_off: heater
         else:
@@ -70,5 +70,6 @@ logger:
   level: DEBUG
 web_server:
   port: 80
-  prometheus: true
+
+prometheus:
 

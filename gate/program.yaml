@@ -1,5 +1,5 @@
 # Config from https://community.home-assistant.io/t/4-channel-relay-esp8266-wifi-board-working-with-esphome/120594/48
-# curl -X POST http://dualrelay/switch/relay1/turn_off
+# curl -X POST http://gate/switch/relay1/turn_off
 esphome:
   name: gate
   platform: ESP8266
@@ -11,7 +11,7 @@ wifi:
 
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
-    ssid: "dualrelay Fallback Hotspot"
+    ssid: "gate Fallback Hotspot"
 
 captive_portal:
 
@@ -32,8 +32,13 @@ uart:
 
 switch:
   - platform: template
-    name: 'dualrelay'
-    id: dualrelay
+    name: 'Gate(ON=closed)'
+    id: gate
+    optimistic: true
+    restore_state: true
+  - platform: template
+    name: 'Automatic Mode(ON=automatic)'
+    id: automatic
     optimistic: true
     restore_state: true
   - platform: template
@@ -64,7 +69,7 @@ interval:
     if:
       condition:
         # Same syntax for is_off
-        switch.is_on: dualrelay
+        switch.is_on: gate
       then:
         - switch.turn_on: relay1
         - delay: 50ms
@@ -74,3 +79,23 @@ interval:
         - delay: 50ms
         - switch.turn_off: relay2
 
+# Automatically open/close doors when automatic switch is on
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: America/Los_Angeles
+    on_time:
+      - hours: 8
+        then:
+          if:
+            condition:
+              switch.is_on: automatic
+            then:
+            - switch.turn_off: gate
+      - hours: 21
+        then:
+          if:
+            condition:
+              switch.is_on: automatic
+            then:
+            - switch.turn_on: gate

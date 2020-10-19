@@ -1,0 +1,23 @@
+# TODO:
+# * create virual switches: UP and DOWN
+# * these would use a lambda to increase/decrease a global var
+# * that var would then be used in on_value
+# * add a virtual sensor to show the global value
+# * inject some html to control it 
+
+esphome:
+  name: sousvide
+  platform: ESP8266
+  board: esp8285
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Sousvide Fallback Hotspot"
+
+ota:
+# enable http
+

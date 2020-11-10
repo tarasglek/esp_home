@@ -65,6 +65,16 @@ dallas:
     update_interval: 10s
 # Individual sensors
 sensor:
+  - platform: template
+    name: "avg temp(10 measurements)"
+    id: avg_temp
+    lambda: |-
+      return id(temperature).state;
+    update_interval: 10s
+    filters:
+      - sliding_window_moving_average:
+          window_size: 10
+          send_every: 10
   - platform: dallas
     index: 0
     name: temperature
@@ -72,26 +82,34 @@ sensor:
     # update_interval: 60s
     # in a trigger:
     on_value:
-      if:
-        condition:
-          sensor.in_range:
-            id: temperature
-            above: 60
-        then:
-          - switch.turn_off: heater
-          - if:
-              condition:
-                switch.is_on: automatic_vent
-              then:
-              - switch.turn_off: vent
-        else:
-          - switch.turn_on: heater
-          - if:
-              condition:
-                switch.is_on: automatic_vent
-              then:
-              - switch.turn_on: vent
-          # - switch.turn_on: heater
+      then:
+      - if:
+          condition:
+            sensor.in_range:
+              id: temperature
+              above: 107
+          then:
+            - switch.turn_off: heater
+          else:
+            - switch.turn_on: heater
+      - if:
+          condition:
+            sensor.in_range:
+              id: temperature
+              above: 97
+          then:
+            - if:
+                condition:
+                  switch.is_on: automatic_vent
+                then:
+                - switch.turn_off: vent
+          else:
+            - if:
+                condition:
+                  switch.is_on: automatic_vent
+                then:
+                - switch.turn_on: vent
+            # - switch.turn_on: heater
 # logging
 debug:
 logger:

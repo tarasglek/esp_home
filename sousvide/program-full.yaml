@@ -29,15 +29,21 @@ http_request:
   useragent: esphome/sousvide
   timeout: 10s
 
-binary_sensor:
-  - platform: gpio
-    pin:
-      number: GPIO0
-      mode: INPUT_PULLUP
-      inverted: True
-    name: "Toggle"
-    on_press:
-      - switch.toggle: heater
+# binary_sensor:
+#   - platform: gpio
+#     pin:
+#       number: GPIO0
+#       mode: INPUT_PULLUP
+#       inverted: True
+#     name: "Toggle"
+#     on_press:
+#       - switch.toggle: heater
+
+globals:
+   - id: target_temp
+     type: int
+     restore_value: yes
+     initial_value: '57'
 
 switch:
   - platform: gpio
@@ -59,6 +65,24 @@ switch:
     id: automatic_vent
     optimistic: true
     restore_state: true
+  - platform: template
+    name: 'Temp +'
+    id: temp_up
+    turn_on_action:
+      - lambda: |-
+          id(target_temp) += 1;
+    turn_off_action:
+      - lambda: |-
+          id(target_temp) += 1;
+  - platform: template
+    name: 'Temp -'
+    id: temp_down
+    turn_on_action:
+      - lambda: |-
+          id(target_temp) -= 1;
+    turn_off_action:
+      - lambda: |-
+          id(target_temp) -= 1;
 # temp sensor
 dallas:
   - pin: 14
@@ -75,6 +99,12 @@ sensor:
       - sliding_window_moving_average:
           window_size: 10
           send_every: 10
+  - platform: template
+    name: "Target Temp"
+    id: target_temp_sensor
+    lambda: |-
+      return id(target_temp);
+    update_interval: 10s
   - platform: dallas
     index: 0
     name: temperature
@@ -85,18 +115,21 @@ sensor:
       then:
       - if:
           condition:
-            sensor.in_range:
-              id: temperature
-              above: 107
+            lambda: |-
+              return id(temperature).state >= id(target_temp);
           then:
             - switch.turn_off: heater
           else:
             - switch.turn_on: heater
       - if:
           condition:
-            sensor.in_range:
-              id: temperature
-              above: 97
+            # shut off vent while we are heating up(5deg prior to target) expecting to overshoot
+            # when we are cooling off, open vent right away to avoid coals going out
+            lambda: |-
+              int temp_buffer = 5;
+              if (id(avg_temp).state > id(temperature).state)
+                temp_buffer = 0;
+              return id(temperature).state >= id(target_temp) + 5;
           then:
             - if:
                 condition:
@@ -109,7 +142,6 @@ sensor:
                   switch.is_on: automatic_vent
                 then:
                 - switch.turn_on: vent
-            # - switch.turn_on: heater
 # logging
 debug:
 logger:

@@ -26,7 +26,7 @@ binary_sensor:
       number: GPIO0
       mode: INPUT_PULLUP
       inverted: True
-    name: "Toggle"
+    name: "Physical On/Off"
     on_press:
       - switch.toggle: pump
 
@@ -35,8 +35,12 @@ switch:
     name: pump
     pin: GPIO12
     id: pump
+  - platform: template
+    name: 'Schedule'
+    id: schedule
+    optimistic: true
+    restore_state: true
 
-# Example configuration entry
 sensor:
   - platform: dht
     pin: 14
@@ -63,35 +67,24 @@ time:
   - platform: sntp
     id: sntp_time
     timezone: America/Los_Angeles
-    on_time:
-    #run pool extra hours if raining or hot
-      - hours: 6-9
+
+# Example configuration entry
+interval:
+  - interval: 1min
+    then:
+      if:
+        condition:
+          and:
+          - switch.is_on: schedule
         then:
           if:
             condition:
-              or:
-                - sensor.in_range:
-                    id: temperature
-                    above: 20.0
-            then:
-              - switch.turn_on: pump
-            else:
-              - switch.turn_off: pump
-      - hours: 9-15
-        then:
-          - switch.turn_on: pump
-      - hours: 21-22
-        then:
-          if:
-            condition:
-              or:
-                - sensor.in_range:
-                    id: temperature
-                    above: 20.0
+            - lambda: |-
+                auto time = id(sntp_time).now();
+                return (id(temperature).state > 20 && ((time.hour >= 6 && time.hour < 10) || (time.hour >= 21 && time.hour <= 23))) ||
+                (time.hour >= 10 && time.hour < 16)
+                ;
             then:
             - switch.turn_on: pump
-      - hours: 16,23,0-5
-        then:
-          - switch.turn_off: pump
-      
-
+            else:
+            - switch.turn_off: pump

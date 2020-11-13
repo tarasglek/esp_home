@@ -41,6 +41,8 @@ switch:
     id: automatic
     optimistic: true
     restore_state: true
+    turn_off_action:
+      switch.turn_off: gate
   - platform: template
     name: 'relay1'
     id: relay1
@@ -85,14 +87,14 @@ time:
     id: sntp_time
     timezone: America/Los_Angeles
     on_time:
-      - hours: 8
+      - hours: 0-8
         then:
           if:
             condition:
               switch.is_on: automatic
             then:
             - switch.turn_off: gate
-      - hours: 21
+      - hours: 21-23
         then:
           if:
             condition:

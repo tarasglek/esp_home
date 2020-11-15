@@ -40,6 +40,16 @@ sensor:
       name: "Voltage"
     power:
       name: "Power"
+      id: power
+  - platform: template
+    name: "Hourly Average Power"
+    id: hourly_power
+    lambda: |-
+      return id(power).state;
+    update_interval: 60s
+    filters:
+      - sliding_window_moving_average:
+          window_size: 60
 
 binary_sensor:
   - platform: gpio

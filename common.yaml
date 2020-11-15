@@ -1,0 +1,27 @@
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "${name} Fallback Hotspot"
+
+captive_portal:
+
+api:
+  reboot_timeout: 0s
+
+logger:
+  # disable logging to serial port
+  baud_rate: 0
+  level: DEBUG
+  logs:
+    switch: ERROR
+    interval: DEBUG
+
+ota:
+
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: America/Los_Angeles

@@ -40,6 +40,7 @@ switch:
     id: schedule
     optimistic: true
     restore_state: true
+    assumed_state: true
 
 sensor:
   - platform: dht
@@ -81,7 +82,7 @@ interval:
             condition:
             - lambda: |-
                 auto time = id(sntp_time).now();
-                return (id(temperature).state > 20 && ((time.hour >= 6 && time.hour < 10) || (time.hour >= 21 && time.hour <= 23))) ||
+                return (id(temperature).state > 19 && ((time.hour >= 6 && time.hour < 10) || (time.hour >= 21 && time.hour <= 23))) ||
                 (time.hour >= 10 && time.hour < 16)
                 ;
             then:

@@ -1,24 +1,12 @@
+substitutions:
+  name: commandline_flag
+
 esphome:
-  name: poolpump
+  name: $name
   platform: ESP8266
   board: esp8285
-  # on_boot:
-  #   - switch.turn_on: pump
 
-wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
-
-  # Enable fallback hotspot (captive portal) in case wifi connection fails
-  ap:
-    ssid: "pool Fallback Hotspot"
-
-captive_portal:
-
-# Enable Home Assistant API
-api:
-
-ota:
+<<: !include  ../common.yaml
 
 binary_sensor:
   - platform: gpio
@@ -53,21 +41,6 @@ sensor:
       name: "humidity"
       id: humidity
     update_interval: 10s
-# logging
-# debug:
-
-logger:
- level: DEBUG
-
-web_server:
-  port: 80
-prometheus:
-
-# Example configuration entry
-time:
-  - platform: sntp
-    id: sntp_time
-    timezone: America/Los_Angeles
 
 # Example configuration entry
 interval:

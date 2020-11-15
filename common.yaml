@@ -25,3 +25,8 @@ time:
   - platform: sntp
     id: sntp_time
     timezone: America/Los_Angeles
+
+web_server:
+  port: 80
+
+prometheus:

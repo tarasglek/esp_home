@@ -80,6 +80,8 @@ switch:
 debug:
 web_server:
   port: 80
+  css_include: gate.css
+
 prometheus:
 
 interval:
@@ -97,7 +99,7 @@ interval:
         - switch.turn_off: relay1
         - delay: 50ms
         - switch.turn_off: relay2
-- interval: 1min
+- interval: 1s
   then:
     if:
       condition:
@@ -108,11 +110,9 @@ interval:
           condition:
           - lambda: |-
               auto time = id(sntp_time).now().timestamp;
-               // , ctime(&id(open_timeout))
               bool should_close = time > id(open_timeout);
-              ESP_LOGD("decision", "should_close:%d, time(%s)", should_close, ctime(&time));
-              ESP_LOGD("decision", "open_timeout(%s)", ctime(&id(open_timeout)));
-              id(update_open_timeout_sensor).execute();
+              if (!should_close)
+                id(update_open_timeout_sensor).execute();
               return should_close ;
           then:
             if:

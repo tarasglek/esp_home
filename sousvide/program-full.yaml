@@ -29,16 +29,6 @@ http_request:
   useragent: esphome/sousvide
   timeout: 10s
 
-# binary_sensor:
-#   - platform: gpio
-#     pin:
-#       number: GPIO0
-#       mode: INPUT_PULLUP
-#       inverted: True
-#     name: "Toggle"
-#     on_press:
-#       - switch.toggle: heater
-
 globals:
    - id: target_temp
      type: int
@@ -70,19 +60,20 @@ switch:
     id: temp_up
     turn_on_action:
       - lambda: |-
-          id(target_temp) += 1;
+          id(target_temp_sensor).publish_state(++id(target_temp));
     turn_off_action:
       - lambda: |-
-          id(target_temp) += 1;
+          id(target_temp_sensor).publish_state(++id(target_temp));
   - platform: template
     name: 'Temp -'
     id: temp_down
     turn_on_action:
       - lambda: |-
-          id(target_temp) -= 1;
+          id(target_temp_sensor).publish_state(--id(target_temp));
     turn_off_action:
       - lambda: |-
-          id(target_temp) -= 1;
+          id(target_temp_sensor).publish_state(--id(target_temp));
+
 # temp sensor
 dallas:
   - pin: 14
@@ -102,9 +93,6 @@ sensor:
   - platform: template
     name: "Target Temp"
     id: target_temp_sensor
-    lambda: |-
-      return id(target_temp);
-    update_interval: 10s
   - platform: dallas
     index: 0
     name: temperature
@@ -127,6 +115,7 @@ sensor:
             # when we are cooling off, open vent right away to avoid coals going out
             lambda: |-
               int temp_buffer = 5;
+              id(target_temp_sensor).publish_state(id(target_temp));
               if (id(avg_temp).state > id(temperature).state)
                 temp_buffer = 0;
               return id(temperature).state >= id(target_temp) + 5;
@@ -148,6 +137,7 @@ logger:
   level: DEBUG
 web_server:
   port: 80
+  css_include: gate.css
 
 prometheus:
 

@@ -1,0 +1,74 @@
+body {
+    font-size: 16px;
+}
+
+tbody{
+    width: 100%;
+    padding: 10px;
+}
+
+/* #switch-gateonclosed #switch-automatic_modeonautomatic{
+    height: 180px;
+    font-size: 16px;
+} */
+
+
+th tr {
+    font-size: 16px;
+    height: 200px;
+    padding: 40px;
+    
+
+}
+
+td {
+    font-size: xx-large;
+    padding-bottom: 100px;
+
+ 
+}
+
+
+
+button {
+    /* padding: 60px 30px; */
+    font-size: 30px;
+    margin: 20px;
+    min-width: 250px;
+    min-height: 20px;
+    font-family: 'Nunito', sans-serif;
+    /* font-size: 22px; */
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    color: #313133;
+    background:#00ffcb;
+    background: linear-gradient(90deg, rgba(129, 230, 217, 1) 0%, rgba(79, 209, 197, 1) 100%);
+    /* border: solid rgb(15, 95, 95) 6px; */
+    border-radius: 1000px;
+    box-shadow: 12px 12px 24px rgba(42, 90, 85, 0.64);
+    transition: all 0.3s ease-in-out 0s;
+    cursor: pointer;
+    outline: none;
+    position: relative;
+    padding: 40px 30px;
+}
+body @media screen and (-webkit-min-device-pixel-ratio:0) { 
+    select:focus,
+    textarea:focus,
+    input:focus {
+      font-size: 16px;
+      }
+  }
+
+  body @media screen and (-webkit-min-device-pixel-ratio:0) { 
+    select,
+    textarea,
+    input {
+      font-size: 16px;
+    }
+  }
+
+  body {
+    touch-action: manipulation;
+  }

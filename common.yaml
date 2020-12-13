@@ -29,6 +29,5 @@ time:
 
 web_server:
   port: 80
-  css_url: http://192.168.1.239:8000/gate.css
 
 prometheus:

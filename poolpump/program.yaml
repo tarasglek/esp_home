@@ -1,3 +1,5 @@
+# Add a pulse mode to run for 60min(during schedule)
+# add prometheus alert to trigger it if <8hours in past week
 substitutions:
   name: commandline_flag
 
@@ -5,18 +7,15 @@ esphome:
   name: $name
   platform: ESP8266
   board: esp8285
+  esp8266_restore_from_flash: true
+
+globals:
+   - id: run_timeout
+     type: time_t
+     restore_value: yes
+     initial_value: '0'
 
 <<: !include  ../common.yaml
-
-binary_sensor:
-  - platform: gpio
-    pin:
-      number: GPIO0
-      mode: INPUT_PULLUP
-      inverted: True
-    name: "Physical On/Off"
-    on_press:
-      - switch.toggle: pump
 
 switch:
   - platform: gpio
@@ -29,6 +28,32 @@ switch:
     optimistic: true
     restore_state: true
     assumed_state: true
+  - platform: template
+    name: 'Run for 60min'
+    id: toggle_run_timeout
+    turn_on_action:
+    - script.execute: bump_run_timeout
+    turn_off_action:
+    - script.execute: bump_run_timeout
+    lambda: |-
+      auto time = id(sntp_time).now();
+      auto timestamp = time.timestamp;
+      bool pump_on_from_timeout = timestamp < id(run_timeout);
+      return pump_on_from_timeout;
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: True
+    name: "Physical On/Off"
+    on_press:
+      - switch.toggle: pump
+
+text_sensor:
+  - platform: template
+    name: "Run Until"
+    id: run_timeout_sensor
 
 sensor:
   - platform: dht
@@ -42,23 +67,32 @@ sensor:
       id: humidity
     update_interval: 10s
 
-# Example configuration entry
-interval:
-  - interval: 1min
+script:
+  - id: bump_run_timeout
     then:
-      if:
-        condition:
-          and:
-          - switch.is_on: schedule
-        then:
-          if:
-            condition:
-            - lambda: |-
-                auto time = id(sntp_time).now();
-                return (id(temperature).state > 19 && ((time.hour >= 6 && time.hour < 10) || (time.hour >= 21 && time.hour <= 23))) ||
-                (time.hour >= 10 && time.hour < 16)
-                ;
-            then:
-            - switch.turn_on: pump
-            else:
-            - switch.turn_off: pump
+      - lambda: |-
+          time_t t = id(sntp_time).now().timestamp + 60 * 60;
+          id(run_timeout) = t;
+          id(schedule_tick).execute();
+  - id: update_run_timeout_sensor
+    then:
+      - lambda: |-
+          id(run_timeout_sensor).publish_state(ctime(&id(run_timeout)));
+  - id: schedule_tick
+    then:
+      - lambda: |-
+          auto time = id(sntp_time).now();
+          auto timestamp = time.timestamp;
+          bool isRunWindow = (time.hour >= 6 && time.hour < 16) || (time.hour >= 21 && time.hour <= 23);
+          bool pump_on_from_timeout = timestamp < id(run_timeout);
+          if (pump_on_from_timeout)
+            id(update_run_timeout_sensor).execute();
+          if (id(schedule).state) {
+            bool pump_on = id(temperature).state > 20 || pump_on_from_timeout;
+            if (id(pump).state != pump_on)
+              id(pump).toggle();
+          }
+interval:
+  - interval: 1s
+    then:
+    - script.execute: schedule_tick

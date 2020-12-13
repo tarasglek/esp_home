@@ -22,7 +22,6 @@ uart:
   tx_pin: GPIO1
   rx_pin: GPIO3
 
-# Example configuration entry
 text_sensor:
   - platform: template
     name: "Open Until"
@@ -35,12 +34,21 @@ script:
           time_t t = id(sntp_time).now().timestamp + 60 * 30;
           id(open_timeout) = t;
           ESP_LOGD("decision", "The value of sensor is: %s", ctime(&t));
-          id(update_open_timeout_sensor).execute();
+          id(schedule_tick).execute();
   - id: update_open_timeout_sensor
     then:
       - lambda: |-
           id(open_timeout_sensor).publish_state(ctime(&id(open_timeout) ));
-
+  - id: schedule_tick
+    then:
+      - lambda: |-
+          auto time = id(sntp_time).now().timestamp;
+          bool switch_closed = time > id(open_timeout);
+          if (!switch_closed) {
+            id(update_open_timeout_sensor).execute();
+          }
+          if (id(automatic).state && id(gate).state != switch_closed)
+            id(gate).toggle();
 switch:
   - platform: template
     name: 'Gate(ON=closed)'
@@ -60,6 +68,8 @@ switch:
     restore_state: true
     turn_off_action:
       switch.turn_off: gate
+    turn_on_action:
+    - script.execute: schedule_tick
   - platform: template
     name: 'relay1'
     id: relay1
@@ -101,30 +111,4 @@ interval:
         - switch.turn_off: relay2
 - interval: 1s
   then:
-    if:
-      condition:
-        and:
-        - switch.is_on: automatic
-      then:
-        if:
-          condition:
-          - lambda: |-
-              auto time = id(sntp_time).now().timestamp;
-              bool should_close = time > id(open_timeout);
-              if (!should_close)
-                id(update_open_timeout_sensor).execute();
-              return should_close ;
-          then:
-            if:
-              condition:
-                switch.is_off: gate
-              then:
-              - switch.turn_on: gate
-              - logger.log: switching gate on
-          else:
-            if:
-              condition:
-                switch.is_on: gate
-              then:
-              - switch.turn_off: gate
-              - logger.log: switching gate off
+    - script.execute: schedule_tick

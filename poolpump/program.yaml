@@ -28,6 +28,8 @@ switch:
     optimistic: true
     restore_state: true
     assumed_state: true
+    turn_off_action:
+    - switch.turn_off: pump
   - platform: template
     name: 'Run for 60min'
     id: toggle_run_timeout
@@ -83,14 +85,20 @@ script:
       - lambda: |-
           auto time = id(sntp_time).now();
           auto timestamp = time.timestamp;
+          bool pump_on = id(pump).state;
           bool isRunWindow = (time.hour >= 6 && time.hour < 16) || (time.hour >= 21 && time.hour <= 23);
-          bool pump_on_from_timeout = timestamp < id(run_timeout);
-          if (pump_on_from_timeout)
-            id(update_run_timeout_sensor).execute();
           if (id(schedule).state) {
-            bool pump_on = id(temperature).state > 20 || pump_on_from_timeout;
-            if (id(pump).state != pump_on)
+            bool pump_on_from_timeout = timestamp < id(run_timeout);
+            if (pump_on_from_timeout) {
+              id(update_run_timeout_sensor).execute();
+            } else if (id(temperature).state > 20) {
+              id(bump_run_timeout).execute();
+              return;
+            }
+            bool run_pump = pump_on_from_timeout && isRunWindow;
+            if (id(pump).state != run_pump) {
               id(pump).toggle();
+            }
           }
 interval:
   - interval: 1s

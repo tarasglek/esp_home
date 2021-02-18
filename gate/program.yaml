@@ -42,12 +42,10 @@ script:
   - id: schedule_tick
     then:
       - lambda: |-
-          auto time = id(sntp_time).now().timestamp;
-          bool switch_closed = time > id(open_timeout);
-          if (!switch_closed) {
+          if (id(open_for_30min).state) {
             id(update_open_timeout_sensor).execute();
           }
-          if (id(automatic).state && id(gate).state != switch_closed)
+          if (id(automatic).state && id(gate).state == id(open_for_30min).state)
             id(gate).toggle();
 switch:
   - platform: template
@@ -57,17 +55,24 @@ switch:
     restore_state: true
   - platform: template
     name: 'Open for 30min'
+    id: open_for_30min
     turn_on_action:
     - script.execute: bump_open_timeout
     turn_off_action:
     - script.execute: bump_open_timeout
+    lambda: |-
+      auto timestamp = id(sntp_time).now().timestamp;
+      return timestamp < id(open_timeout);
   - platform: template
     name: 'Automatic Mode(ON=automatic)'
     id: automatic
     optimistic: true
     restore_state: true
     turn_off_action:
-      switch.turn_off: gate
+    - switch.turn_off: gate
+    - lambda: |-
+        time_t t = id(sntp_time).now().timestamp - 1;
+        id(open_timeout) = t;
     turn_on_action:
     - script.execute: schedule_tick
   - platform: template

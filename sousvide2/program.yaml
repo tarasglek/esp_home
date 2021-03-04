@@ -1,0 +1,22 @@
+# ITEMS IN BOLD NEED EDITING 
+substitutions:
+   name: cat_camera
+ 
+esphome:
+   name: ${name}
+   platform: ESP32
+   board: esp32dev
+
+
+<<: !include  ../common.yaml
+
+# Example configuration entry
+spi:
+  miso_pin: GPIO15
+  clk_pin: GPIO4
+
+sensor:
+  - platform: max31855
+    name: "Living Room Temperature"
+    cs_pin: GPIO2
+    update_interval: 1s

@@ -1,12 +1,16 @@
-# ITEMS IN BOLD NEED EDITING 
+# TODO:
+# * create virual switches: UP and DOWN
+# * these would use a lambda to increase/decrease a global var
+# * that var would then be used in on_value
+# * add a virtual sensor to show the global value
+# * inject some html to control it
 substitutions:
    name: cat_camera
- 
-esphome:
-   name: ${name}
-   platform: ESP32
-   board: esp32dev
 
+esphome:
+  name: $name
+  platform: ESP32
+  board: esp32dev
 
 <<: !include  ../common.yaml
 
@@ -15,56 +19,35 @@ spi:
   miso_pin: GPIO15
   clk_pin: GPIO4
 
-sensor:
-  - platform: max31855
-    name: temperature
-    id: temperature
-    cs_pin: GPIO2
-    update_interval: 1s
-    on_value:
-      then:
-      - if:
-          condition:
-            sensor.in_range:
-              id: temperature
-              above: 107
-          then:
-            - switch.turn_off: heater
-          else:
-            - switch.turn_on: heater
-      - if:
-          condition:
-            sensor.in_range:
-              id: temperature
-              above: 97
-          then:
-            - if:
-                condition:
-                  switch.is_on: automatic_vent
-                then:
-                - switch.turn_off: vent
-          else:
-            - if:
-                condition:
-                  switch.is_on: automatic_vent
-                then:
-                - switch.turn_on: vent
-            # - switch.turn_on: heater
-
 # enable http
 http_request:
   useragent: esphome/sousvide
   timeout: 10s
 
+globals:
+   - id: target_temp
+     type: int
+     restore_value: yes
+    #  initial_value: '57'
+
+script:
+  - id: inc
+    then:
+      - lambda: |-
+          id(target_temp) = id(target_temp) + 1;
+          id(target_temp_sensor).publish_state(id(target_temp));
+  - id: dec
+    then:
+      - lambda: |-
+          id(target_temp) = id(target_temp) - 1;
+          id(target_temp_sensor).publish_state(id(target_temp));
 switch:
-  # - platform: gpio
-  #   pin: 13
-  #   name: "pin13"
   - platform: gpio
+    name: heater
     pin: 12
-    name: "heater hhh"
     id: heater
     inverted: true
+    restore_mode: RESTORE_DEFAULT_OFF
   - platform: template
     name: 'Smoker Vent(ON=open)'
     id: vent
@@ -80,3 +63,85 @@ switch:
     id: automatic_vent
     optimistic: true
     restore_state: true
+  - platform: template
+    name: 'Temp +'
+    id: temp_up
+    turn_on_action:
+    - script.execute: inc
+    turn_off_action:
+    - script.execute: inc
+  - platform: template
+    name: 'Temp -'
+    id: temp_down
+    turn_on_action:
+    - script.execute: dec
+    turn_off_action:
+    - script.execute: dec
+# Individual sensors
+sensor:
+  - platform: template
+    name: "avg temp(10 measurements)"
+    id: avg_temp
+    lambda: |-
+      return id(temperature).state;
+    update_interval: 10s
+    filters:
+      - sliding_window_moving_average:
+          window_size: 10
+          send_every: 10
+  - platform: template
+    name: "Target Temp"
+    id: target_temp_sensor
+  - platform: max31855
+    name: raw_temperature
+    id: raw_temperature
+    cs_pin: GPIO2
+    update_interval: 1s
+  - platform: template
+    name: "temperature"
+    id: temperature
+    lambda: |-
+      return id(raw_temperature).state - 2.5;
+    update_interval: 1s
+    on_value:
+      then:
+      - if:
+          condition:
+            lambda: |-
+              return id(temperature).state >= id(target_temp);
+          then:
+            - switch.turn_off: heater
+          else:
+            - switch.turn_on: heater
+      - if:
+          condition:
+            # shut off vent while we are heating up(5deg prior to target) expecting to overshoot
+            # when we are cooling off, open vent right away to avoid coals going out
+            lambda: |-
+              int temp_buffer = 5;
+              id(target_temp_sensor).publish_state(id(target_temp));
+              if (id(avg_temp).state > id(temperature).state)
+                temp_buffer = 0;
+              return id(temperature).state >= id(target_temp) + 5;
+          then:
+            - if:
+                condition:
+                  switch.is_on: automatic_vent
+                then:
+                - switch.turn_off: vent
+          else:
+            - if:
+                condition:
+                  switch.is_on: automatic_vent
+                then:
+                - switch.turn_on: vent
+# logging
+debug:
+logger:
+  level: DEBUG
+web_server:
+  port: 80
+  css_include: gate.css
+
+prometheus:
+

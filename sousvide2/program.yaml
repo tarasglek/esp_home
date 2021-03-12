@@ -9,15 +9,15 @@ substitutions:
 
 esphome:
   name: $name
-  platform: ESP32
-  board: esp32dev
+  platform: ESP8266
+  board: nodemcuv2
 
 <<: !include  ../common.yaml
 
 # feed max31855
 spi:
-  miso_pin: GPIO15
-  clk_pin: GPIO4
+  miso_pin: D5
+  clk_pin: D6
 
 # enable http
 http_request:
@@ -44,9 +44,9 @@ script:
 switch:
   - platform: gpio
     name: heater
-    pin: 12
+    pin: D4
     id: heater
-    inverted: true
+    inverted: false
     restore_mode: RESTORE_DEFAULT_OFF
   - platform: template
     name: 'Smoker Vent(ON=open)'
@@ -95,13 +95,13 @@ sensor:
   - platform: max31855
     name: raw_temperature
     id: raw_temperature
-    cs_pin: GPIO2
+    cs_pin: D7
     update_interval: 1s
   - platform: template
     name: "temperature"
     id: temperature
     lambda: |-
-      return id(raw_temperature).state - 2.5;
+      return id(raw_temperature).state - 14.5;
     update_interval: 1s
     on_value:
       then:

@@ -101,7 +101,7 @@ sensor:
     name: "temperature"
     id: temperature
     lambda: |-
-      return id(raw_temperature).state - 14.5;
+      return id(raw_temperature).state / 2.63 + 3;
     update_interval: 1s
     on_value:
       then:

@@ -41,3 +41,11 @@ sensor:
       name: "compost-left-humidity"
     battery_level:
       name: "compost-left-battery"
+  - platform: atc_mithermometer
+    mac_address: A4:C1:38:D1:BE:A0
+    temperature:
+      name: "compost-legacy-temperature"
+    humidity:
+      name: "compost-legacy-humidity"
+    battery_level:
+      name: "compost-legacy-battery"

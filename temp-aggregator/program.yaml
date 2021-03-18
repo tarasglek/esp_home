@@ -20,11 +20,11 @@ sensor:
   - platform: atc_mithermometer
     mac_address: "A4:C1:38:DB:BC:AA"
     temperature:
-      name: "garage-temperature"
+      name: "shed-temperature"
     humidity:
-      name: "garage-humidity"
+      name: "shed-humidity"
     battery_level:
-      name: "garage-battery"
+      name: "shed-battery"
   - platform: atc_mithermometer
     mac_address: 'A4:C1:38:AC:BB:EF'
     temperature:

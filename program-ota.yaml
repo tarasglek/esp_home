@@ -1,0 +1,15 @@
+# TODO:
+# * create virual switches: UP and DOWN
+# * these would use a lambda to increase/decrease a global var
+# * that var would then be used in on_value
+# * add a virtual sensor to show the global value
+# * inject some html to control it 
+substitutions:
+   name: replace_me
+
+esphome:
+  name: ${name}
+  platform: ESP8266
+  board: esp01_1m
+
+<<: !include  ../common_password.yaml

@@ -1,0 +1,24 @@
+substitutions:
+   name: replace_me
+
+esphome:
+  name: ${name}
+  platform: ESP8266
+  board: esp01_1m
+
+
+<<: !include  ../common.yaml
+
+dallas:
+  - pin: GPIO2
+    update_interval: 1s
+
+sensor:
+  - platform: dallas
+    name: temperature
+    id: temperature
+    address: 0xEF01191B2D357328
+
+switch:
+  - platform: restart
+    name: "Restart"

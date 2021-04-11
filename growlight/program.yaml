@@ -19,6 +19,43 @@ sensor:
     id: temperature
     address: 0xEF01191B2D357328
 
+uart:
+  baud_rate: 115200 # speed to STC15L101EW
+  tx_pin: GPIO1
+  rx_pin: GPIO3
+
 switch:
   - platform: restart
     name: "Restart"
+  - platform: template
+    name: 'relay1'
+    id: relay1
+    turn_on_action:
+      - uart.write: [0xA0, 0x01, 0x01, 0xA2]
+    turn_off_action:
+      - uart.write: [0xA0, 0x01, 0x00, 0xA1]
+    optimistic: true
+  - platform: template
+    name: 'relay2'
+    id: relay2
+    turn_on_action:
+      - uart.write: [0xA0, 0x02, 0x01, 0xA3]
+    turn_off_action:
+      - uart.write: [0xA0, 0x02, 0x00, 0xA2]
+    optimistic: true
+  - platform: template
+    name: 'relay3'
+    id: relay3
+    turn_on_action:
+      - uart.write: [0xA0, 0x03, 0x01, 0xA4]
+    turn_off_action:
+      - uart.write: [0xA0, 0x03, 0x00, 0xA3]
+    optimistic: true
+  - platform: template
+    name: 'relay4'
+    id: relay4
+    turn_on_action:
+      - uart.write: [0xA0, 0x04, 0x01, 0xA5]
+    turn_off_action:
+      - uart.write: [0xA0, 0x04, 0x00, 0xA4]
+    optimistic: true

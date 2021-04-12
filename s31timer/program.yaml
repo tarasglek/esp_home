@@ -1,0 +1,77 @@
+substitutions:
+  name: commandline_flag
+
+esphome:
+  name: $name
+  platform: ESP8266
+  board: esp8285
+
+<<: !include  ../common.yaml
+
+globals:
+   - id: g_run_timeout
+     type: time_t
+     initial_value: '0'
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: True
+    name: "ON/OFF"
+    on_press:
+      - script.execute: button_press
+
+switch:
+  - platform: gpio
+    name: "Sonoff 2 Relay"
+    pin: GPIO12
+    id: relay
+    restore_mode: RESTORE_DEFAULT_ON
+  - platform: template
+    name: 'virtual ON/oFF'
+    turn_on_action:
+    - script.execute: button_press
+    turn_off_action:
+    - script.execute: button_press
+status_led:
+  pin:
+    number: GPIO13
+
+script:
+  - id: button_press
+    then:
+      - lambda: |-
+          auto timestamp = id(sntp_time).now().timestamp;
+          ESP_LOGD("interval", "old run_timeout= %d", id(g_run_timeout) );
+          if (id(g_run_timeout) && timestamp > id(g_run_timeout)) {
+            timestamp = 0;
+          } else {
+            timestamp += 60 * 60;
+          }
+          id(g_run_timeout) = timestamp;
+          ESP_LOGD("interval", "run_timeout=%d", id(g_run_timeout) );
+          id(schedule_tick).execute();
+  - id: schedule_tick
+    then:
+      - lambda: |-
+          time_t timestamp = id(sntp_time).now().timestamp;
+          time_t run_timeout = id(g_run_timeout);
+          ESP_LOGD("interval", "run_timeout==%i", run_timeout);
+
+          bool state = timestamp < run_timeout;
+          ESP_LOGD("interval", "state:%i, timestamp:%i, run_timeout:%i, diff:%i", state, timestamp, run_timeout, run_timeout-timestamp);
+
+          if (id(relay).state != state) {
+            id(relay).toggle();
+          }
+          if (!state) {
+            id(g_run_timeout) = 0;
+            ESP_LOGD("interval", "reset run_timeout %i", id(g_run_timeout));
+
+          }
+interval:
+  - interval: 1s
+    then:
+    - script.execute: schedule_tick

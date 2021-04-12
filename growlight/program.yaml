@@ -5,7 +5,7 @@ esphome:
   name: ${name}
   platform: ESP8266
   board: esp01_1m
-
+  esp8266_restore_from_flash: true
 
 <<: !include  ../common.yaml
 
@@ -20,7 +20,7 @@ sensor:
     address: 0xEF01191B2D357328
 
 uart:
-  baud_rate: 115200 # speed to STC15L101EW
+  baud_rate: 115200
   tx_pin: GPIO1
   rx_pin: GPIO3
 
@@ -44,18 +44,55 @@ switch:
       - uart.write: [0xA0, 0x02, 0x00, 0xA2]
     optimistic: true
   - platform: template
-    name: 'relay3'
-    id: relay3
+    name: 'lights'
+    id: lights
     turn_on_action:
       - uart.write: [0xA0, 0x03, 0x01, 0xA4]
     turn_off_action:
       - uart.write: [0xA0, 0x03, 0x00, 0xA3]
     optimistic: true
   - platform: template
-    name: 'relay4'
-    id: relay4
+    name: 'pump'
+    id: pump
     turn_on_action:
       - uart.write: [0xA0, 0x04, 0x01, 0xA5]
     turn_off_action:
       - uart.write: [0xA0, 0x04, 0x00, 0xA4]
     optimistic: true
+  - platform: template
+    name: 'Schedule 7>=schedule<16'
+    id: schedule
+    optimistic: true
+    restore_state: true
+    assumed_state: true
+    turn_on_action:
+    - script.execute: schedule_tick
+    turn_off_action:
+    - script.execute: schedule_tick
+
+interval:
+  - interval: 1s
+    then:
+      - script.execute: schedule_tick
+script:
+  - id: schedule_tick
+    then:
+      - lambda: |-
+          auto time = id(sntp_time).now();
+          auto timestamp = time.timestamp;
+          if (!id(schedule).state) {
+            return;
+          }
+          bool isTempSafe = id(temperature).state < 45;
+          bool isRunWindow = (time.hour >= 8 && time.hour < 18);
+          bool turnOnLights = isRunWindow && isTempSafe;
+          if (isRunWindow) {
+            id(pump).turn_on();
+          } else {
+            id(pump).turn_off();
+          }
+          if (turnOnLights) {
+            id(lights).turn_on();
+          } else {
+            id(lights).turn_off();
+          }

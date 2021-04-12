@@ -49,3 +49,6 @@ sensor:
       name: "compost-legacy-humidity"
     battery_level:
       name: "compost-legacy-battery"
+switch:
+  - platform: restart
+    name: "Restart"

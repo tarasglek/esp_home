@@ -12,11 +12,9 @@ esphome:
 globals:
    - id: run_timeout
      type: time_t
-     restore_value: yes
      initial_value: '0'
    - id: hush_timeout
      type: time_t
-     restore_value: yes
      initial_value: '0'
 
 <<: !include  ../common.yaml
@@ -123,7 +121,7 @@ script:
             if (id(pump).state != run_pump) {
               id(pump).toggle();
             }
-            if (!run_pump && id(temperature).state > 20) {
+            if (!run_pump && !is_hush_timeout && id(temperature).state > 20) {
               id(bump_run_timeout).execute();
               return;
             }

@@ -98,8 +98,14 @@ script:
   - id: update_timeout_sensor
     then:
       - lambda: |-
-          id(run_timeout_sensor).publish_state(ctime(&id(run_timeout)));
-          id(hush_timeout_sensor).publish_state(ctime(&id(hush_timeout)));
+          auto str_run_timeout = ctime(&id(run_timeout));
+          if (id(run_timeout_sensor).state != str_run_timeout) {
+            id(run_timeout_sensor).publish_state(str_run_timeout);
+          }
+          auto str_hush_timeout = ctime(&id(hush_timeout));
+          if (id(hush_timeout_sensor).state != str_hush_timeout) {
+            id(hush_timeout_sensor).publish_state(str_hush_timeout);
+          }
 
   - id: schedule_tick
     then:
@@ -118,12 +124,12 @@ script:
 
           if (id(schedule).state) {
             bool run_pump = pump_on_from_timeout && isRunTime && !is_hush_timeout;
-            if (id(pump).state != run_pump) {
-              id(pump).toggle();
-            }
-            if (!run_pump && !is_hush_timeout && id(temperature).state > 20) {
+            if (isRunTime && !run_pump && !is_hush_timeout && id(temperature).state > 20) {
               id(bump_run_timeout).execute();
               return;
+            }
+            if (id(pump).state != run_pump) {
+              id(pump).toggle();
             }
           }
 interval:

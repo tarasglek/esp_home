@@ -92,8 +92,9 @@ script:
   - id: bump_hush_timeout
     then:
       - lambda: |-
-          time_t t = id(sntp_time).now().timestamp + 60 * 60;
-          id(hush_timeout) = t;
+          time_t now = id(sntp_time).now().timestamp;
+          // set timeout if it's not set, otherwise turn it off
+          id(hush_timeout) = now > id(hush_timeout) ? now + 60 * 60 : 0;
           id(schedule_tick).execute();
   - id: update_timeout_sensor
     then:

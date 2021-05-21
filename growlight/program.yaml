@@ -60,7 +60,7 @@ switch:
       - uart.write: [0xA0, 0x04, 0x00, 0xA4]
     optimistic: true
   - platform: template
-    name: 'Schedule 7>=schedule<16'
+    name: 'Schedule 6>=schedule<18'
     id: schedule
     optimistic: true
     restore_state: true
@@ -87,7 +87,7 @@ script:
           const int TEMP_STEP = 5;
           int current_temp = id(temperature).state;
           bool isTempSafe = current_temp < TEMP_LIMIT;
-          bool isRunTime = (time.hour >= 8 && time.hour < 18);
+          bool isRunTime = (time.hour >= 6 && time.hour < 18);
           bool turnOnLights = isRunTime && isTempSafe;
           bool runPump = isRunTime && (current_temp >= TEMP_LIMIT - TEMP_STEP || (id(pump).state && current_temp >= TEMP_LIMIT - TEMP_STEP * 2));
           if (runPump) {

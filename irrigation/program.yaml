@@ -1,0 +1,90 @@
+substitutions:
+   name: replace_me
+
+esphome:
+  name: ${name}
+  platform: ESP8266
+  board: esp01_1m
+  esp8266_restore_from_flash: true
+
+<<: !include  ../common.yaml
+
+uart:
+  baud_rate: 115200
+  tx_pin: GPIO1
+  rx_pin: GPIO3
+
+switch:
+  - platform: restart
+    name: "Restart"
+  - platform: template
+    name: 'downhill'
+    id: downhill
+    turn_on_action:
+      - uart.write: [0xA0, 0x01, 0x01, 0xA2]
+    turn_off_action:
+      - uart.write: [0xA0, 0x01, 0x00, 0xA1]
+    optimistic: true
+  - platform: template
+    name: 'relay2'
+    id: relay2
+    turn_on_action:
+      - uart.write: [0xA0, 0x02, 0x01, 0xA3]
+    turn_off_action:
+      - uart.write: [0xA0, 0x02, 0x00, 0xA2]
+    optimistic: true
+  - platform: template
+    name: 'uphill'
+    id: uphill
+    turn_on_action:
+      - uart.write: [0xA0, 0x03, 0x01, 0xA4]
+    turn_off_action:
+      - uart.write: [0xA0, 0x03, 0x00, 0xA3]
+    optimistic: true
+  - platform: template
+    name: 'relay4'
+    id: pump
+    turn_on_action:
+      - uart.write: [0xA0, 0x04, 0x01, 0xA5]
+    turn_off_action:
+      - uart.write: [0xA0, 0x04, 0x00, 0xA4]
+    optimistic: true
+  - platform: template
+    name: 'Schedule 6>=schedule<18'
+    id: schedule
+    optimistic: true
+    restore_state: true
+    assumed_state: true
+    turn_on_action:
+    - script.execute: schedule_tick
+    turn_off_action:
+    - script.execute: schedule_tick
+
+interval:
+  - interval: 1s
+    then:
+      - script.execute: schedule_tick
+script:
+  - id: schedule_tick
+    then:
+      - lambda: |-
+          auto time = id(sntp_time).now();
+          const int START_HOUR = 6;
+          const int STOP_HOUR = 18;
+          if (!id(schedule).state) {
+            return;
+          } 
+          bool isRunTime = (time.hour >= START_HOUR && time.hour < STOP_HOUR);
+          // 5min of every day hour
+          bool isUphillOn = time.minute < 5;
+          bool isDownhillOn = (time.hour == START_HOUR || time.hour == STOP_HOUR) && time.minute > 5 && time.minute < 8;
+          if (isUphillOn) {
+            id(uphill).turn_on();
+          } else {
+            id(uphill).turn_off();
+          }
+          if (isDownhillOn) {
+            id(downhill).turn_on();
+          } else {
+            id(downhill).turn_off();
+          }

@@ -76,8 +76,8 @@ script:
           } 
           bool isRunTime = (time.hour >= START_HOUR && time.hour < STOP_HOUR);
           // 5min of every day hour
-          bool isUphillOn = time.minute < 5;
-          bool isDownhillOn = (time.hour == START_HOUR || time.hour == STOP_HOUR) && time.minute > 5 && time.minute < 8;
+          bool isUphillOn = isRunTime && time.minute < 5;
+          bool isDownhillOn = isRunTime && (time.hour == START_HOUR || time.hour == STOP_HOUR) && time.minute > 5 && time.minute < 8;
           if (isUphillOn) {
             id(uphill).turn_on();
           } else {

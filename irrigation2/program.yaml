@@ -18,32 +18,32 @@ switch:
   - platform: restart
     name: "Restart"
   - platform: template
-    name: 'downhill'
-    id: downhill
+    name: 'pump'
+    id: pump
     turn_on_action:
       - uart.write: [0xA0, 0x01, 0x01, 0xA2]
     turn_off_action:
       - uart.write: [0xA0, 0x01, 0x00, 0xA1]
     optimistic: true
   - platform: template
-    name: 'pool'
-    id: pool
+    name: 'hose1'
+    id: hose1
     turn_on_action:
       - uart.write: [0xA0, 0x02, 0x01, 0xA3]
     turn_off_action:
       - uart.write: [0xA0, 0x02, 0x00, 0xA2]
     optimistic: true
   - platform: template
-    name: 'uphill'
-    id: uphill
+    name: 'hose2'
+    id: hose2
     turn_on_action:
       - uart.write: [0xA0, 0x03, 0x01, 0xA4]
     turn_off_action:
       - uart.write: [0xA0, 0x03, 0x00, 0xA3]
     optimistic: true
   - platform: template
-    name: 'relay4'
-    id: pump
+    name: 'hose3'
+    id: hose3
     turn_on_action:
       - uart.write: [0xA0, 0x04, 0x01, 0xA5]
     turn_off_action:
@@ -67,26 +67,4 @@ interval:
 script:
   - id: schedule_tick
     then:
-      - lambda: |-
-          auto time = id(sntp_time).now();
-          const int START_HOUR = 6;
-          const int STOP_HOUR = 18;
-          if (!id(schedule).state) {
-            return;
-          } 
-          bool isRunTime = (time.hour >= START_HOUR && time.hour < STOP_HOUR);
-          // 5min of every day hour
-          bool isUphillOn = isRunTime && (time.hour % 2 == 0) && time.minute < 5;
-          bool isDownhillOn = isRunTime && (time.hour == START_HOUR || time.hour == STOP_HOUR) && time.minute > 5 && time.minute < 8;
-          if (isUphillOn) {
-            id(uphill).turn_on();
-          } else {
-            id(uphill).turn_off();
-          }
-          // Serial relays get confused if we send commands too fast
-          delay(50);
-          if (isDownhillOn) {
-            id(downhill).turn_on();
-          } else {
-            id(downhill).turn_off();
-          }
+      - lambda: ''
